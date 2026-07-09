@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { HashRouter, Link, Route, Routes, useLocation } from "react-router-dom";
 import messyReports from "../fixtures/phase-0/messy-reports.json";
 import { EmptyState } from "../components/EmptyState";
 import { Phase0CandidateGallery } from "../features/phase-0/Phase0CandidateGallery";
 import { Phase0RawInfoPanel } from "../features/phase-0/Phase0RawInfoPanel";
 import { Phase0Workbench } from "../features/phase-0/Phase0Workbench";
+import { V1App } from "../features/v1/V1App";
 import type {
   Phase0CandidateReport,
   Phase0MessyRecord,
@@ -19,7 +21,7 @@ const tabs: Array<{ key: TabKey; label: string }> = [
 
 const phase0Records = messyReports satisfies Phase0MessyRecord[];
 
-export function App() {
+function Phase0Home() {
   const [activeTab, setActiveTab] = useState<TabKey>("raw");
   const [selectedRecordId, setSelectedRecordId] = useState(
     phase0Records[0]?.id ?? "",
@@ -57,6 +59,11 @@ export function App() {
         <p>
           第一階段先用 coding agent
           做出可展示的前端原型，再從成果中看見資料品質、角色、狀態與來源的限制。
+        </p>
+        <p className="hero__link">
+          <Link to="/v1/" className="button button--secondary">
+            進入 v1 重新整理工作台 →
+          </Link>
         </p>
       </header>
 
@@ -100,5 +107,47 @@ export function App() {
         )}
       </section>
     </main>
+  );
+}
+
+function TopNav() {
+  const location = useLocation();
+  return (
+    <nav className="top-nav" aria-label="階段導航">
+      <div className="top-nav__inner">
+        <span className="top-nav__brand">災害資訊整理工作台</span>
+        <div className="top-nav__links">
+          <Link to="/" className={location.pathname === "/" ? "active" : ""}>
+            Phase 0 入口
+          </Link>
+          <Link
+            to="/v1/"
+            className={location.pathname.startsWith("/v1") ? "active" : ""}
+          >
+            v1 重新整理
+          </Link>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function Layout() {
+  return (
+    <>
+      <TopNav />
+      <Routes>
+        <Route path="/" element={<Phase0Home />} />
+        <Route path="/v1/*" element={<V1App />} />
+      </Routes>
+    </>
+  );
+}
+
+export function App() {
+  return (
+    <HashRouter>
+      <Layout />
+    </HashRouter>
   );
 }

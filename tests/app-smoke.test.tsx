@@ -5,7 +5,12 @@ import { App } from "../src/app/App";
 describe("App", () => {
   it("renders starter title", () => {
     render(<App />);
-    expect(screen.getByText("災害資訊整理工作台")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "災害資訊整理工作台",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("keeps the home page focused on phase 0 tabs", () => {

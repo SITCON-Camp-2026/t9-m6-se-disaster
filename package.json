@@ -25,10 +25,11 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "typescript": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-router-dom": "^7.18.1",
+    "typescript": "latest",
+    "vite": "latest",
     "zod": "latest"
   },
   "devDependencies": {
@@ -45,7 +46,7 @@
     "jsdom": "latest",
     "prettier": "latest",
     "tsx": "latest",
-    "vitest": "latest",
-    "typescript-eslint": "latest"
+    "typescript-eslint": "latest",
+    "vitest": "latest"
   }
 }
