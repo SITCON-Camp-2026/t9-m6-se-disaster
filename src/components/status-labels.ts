@@ -17,6 +17,8 @@ export const statusLabels: Record<string, string> = {
   requested: "請求中",
   confirmed: "已確認承接",
   completed: "已完成",
+  candidate_submitted: "候選通報已送出",
+  candidate_urgent_submitted: "緊急候選通報已送出",
 };
 
 export function labelForStatus(status: string): string {

@@ -35,3 +35,19 @@ export type Phase0JudgementDraft = {
   unsafeToActDirectly: boolean;
   humanReviewNote?: string;
 };
+
+export type Phase0CandidateReport = {
+  id: string;
+  messyRecordId: string;
+  submittedAt: string;
+  status: "candidate_submitted" | "candidate_urgent_submitted";
+  urgent: boolean;
+  severity: "low" | "medium" | "high";
+  who: string;
+  what: string;
+  when: string;
+  where: string;
+  resources: string;
+  contact: string;
+  reviewNote: string;
+};

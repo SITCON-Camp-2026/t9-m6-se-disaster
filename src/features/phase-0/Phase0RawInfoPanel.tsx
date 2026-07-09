@@ -1,6 +1,7 @@
 import { SourceLabel } from "../../components/SourceLabel";
 import { StatusBadge } from "../../components/StatusBadge";
 import { formatDateTime } from "../../lib/date";
+import { detectPhase0Signals } from "./phase0-signals";
 import type { Phase0MessyRecord } from "./phase0-types";
 
 export function Phase0RawInfoPanel({
@@ -33,6 +34,13 @@ export function Phase0RawInfoPanel({
               <StatusBadge status={record.verificationStatus} />
             </div>
             <p>{record.rawText}</p>
+            <div className="record-card__signals">
+              {detectPhase0Signals(record).map((signal) => (
+                <span key={signal.key} className={`signal-badge ${signal.key}`}>
+                  {signal.label}
+                </span>
+              ))}
+            </div>
             <div className="record-card__meta">
               <SourceLabel sourceType={record.sourceType} />
               <span>更新：{formatDateTime(record.updatedAt)}</span>

@@ -1,15 +1,20 @@
 import { useState } from "react";
 import messyReports from "../fixtures/phase-0/messy-reports.json";
 import { EmptyState } from "../components/EmptyState";
+import { Phase0CandidateGallery } from "../features/phase-0/Phase0CandidateGallery";
 import { Phase0RawInfoPanel } from "../features/phase-0/Phase0RawInfoPanel";
 import { Phase0Workbench } from "../features/phase-0/Phase0Workbench";
-import type { Phase0MessyRecord } from "../features/phase-0/phase0-types";
+import type {
+  Phase0CandidateReport,
+  Phase0MessyRecord,
+} from "../features/phase-0/phase0-types";
 
-type TabKey = "raw" | "workbench";
+type TabKey = "raw" | "workbench" | "approved";
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "raw", label: "原始資訊" },
   { key: "workbench", label: "整理工作台" },
+  { key: "approved", label: "已通過檢查" },
 ];
 
 const phase0Records = messyReports satisfies Phase0MessyRecord[];
@@ -19,10 +24,29 @@ export function App() {
   const [selectedRecordId, setSelectedRecordId] = useState(
     phase0Records[0]?.id ?? "",
   );
+  const [candidateReports, setCandidateReports] = useState<
+    Phase0CandidateReport[]
+  >([]);
 
   function selectForWorkbench(recordId: string) {
     setSelectedRecordId(recordId);
     setActiveTab("workbench");
+  }
+
+  function saveCandidateReport(report: Phase0CandidateReport) {
+    setCandidateReports((prev) => {
+      const exists = prev.some((item) => item.id === report.id);
+      if (exists) {
+        return prev.map((item) => (item.id === report.id ? report : item));
+      }
+      return [...prev, report];
+    });
+  }
+
+  function revokeCandidateReport(reportId: string) {
+    setCandidateReports((prev) =>
+      prev.filter((report) => report.id !== reportId),
+    );
   }
 
   return (
@@ -58,11 +82,20 @@ export function App() {
             selectedRecordId={selectedRecordId}
             onSelect={selectForWorkbench}
           />
-        ) : (
+        ) : activeTab === "workbench" ? (
           <Phase0Workbench
             records={phase0Records}
             selectedRecordId={selectedRecordId}
+            candidateReports={candidateReports}
             onSelect={setSelectedRecordId}
+            onSaveCandidateReport={saveCandidateReport}
+            onRevokeCandidateReport={revokeCandidateReport}
+          />
+        ) : (
+          <Phase0CandidateGallery
+            records={phase0Records}
+            reports={candidateReports}
+            onRevoke={revokeCandidateReport}
           />
         )}
       </section>
