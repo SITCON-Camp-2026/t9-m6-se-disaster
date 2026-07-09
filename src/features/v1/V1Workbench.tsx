@@ -5,6 +5,7 @@ import { V1CandidateForm } from "./V1CandidateForm";
 import { V1CandidateGallery } from "./V1CandidateGallery";
 import { V1JudgementCard } from "./V1JudgementCard";
 import { V1RawInfoPanel } from "./V1RawInfoPanel";
+import { V1StatusBadge } from "./V1StatusBadge";
 import type {
   V1CandidateReport,
   V1JudgementDraft,
@@ -27,9 +28,9 @@ export function V1Workbench({ records }: { records: V1MessyRecord[] }) {
   );
   const [showCandidateForm, setShowCandidateForm] = useState(false);
   const [editingReportId, setEditingReportId] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"workbench" | "gallery">(
-    "workbench",
-  );
+  const [view, setView] = useState<
+    "workbench" | "organizer-review" | "actor-preview"
+  >("workbench");
 
   const selectedRecord =
     records.find((record) => record.id === selectedRecordId) ?? records[0];
@@ -69,11 +70,23 @@ export function V1Workbench({ records }: { records: V1MessyRecord[] }) {
     );
   }
 
+  function markCandidateReviewed(reportId: string) {
+    setCandidateReports((prev) =>
+      prev.map((report) =>
+        report.id === reportId
+          ? {
+              ...report,
+              reviewedAt: report.reviewedAt
+                ? undefined
+                : new Date().toISOString(),
+            }
+          : report,
+      ),
+    );
+  }
+
   const stats = useMemo(() => {
     const values = Object.values(drafts);
-    const unsafeCount = values.filter(
-      (draft) => draft.unsafeToActDirectly,
-    ).length;
     const cannotTaskCount = values.filter(
       (draft) => draft.blockers.length > 0 || draft.unsafeToActDirectly,
     ).length;
@@ -85,7 +98,6 @@ export function V1Workbench({ records }: { records: V1MessyRecord[] }) {
     return {
       total: records.length,
       drafts: values.length,
-      unsafeCount,
       cannotTaskCount,
       thirdPartyCount,
       candidateCount: candidateReports.length,
@@ -111,131 +123,125 @@ export function V1Workbench({ records }: { records: V1MessyRecord[] }) {
             原始資訊。未確認資訊不會顯示為已確認，也不能直接變成任務。
           </p>
         </div>
-        <div className="v1-workbench__view-toggle">
-          <button
-            type="button"
-            className={activeView === "workbench" ? "active" : ""}
-            onClick={() => setActiveView("workbench")}
-          >
-            整理工作台
-          </button>
-          <button
-            type="button"
-            className={activeView === "gallery" ? "active" : ""}
-            onClick={() => setActiveView("gallery")}
-          >
-            候選通報總覽 ({stats.candidateCount})
-          </button>
-        </div>
       </div>
 
-      <div className="v1-stats-bar" aria-label="v1 統計">
-        <div className="v1-stat">
-          <span className="v1-stat__value">{stats.total}</span>
-          <span className="v1-stat__label">原始資訊</span>
-        </div>
-        <div className="v1-stat">
-          <span className="v1-stat__value">{stats.cannotTaskCount}</span>
-          <span className="v1-stat__label">標為不能直接行動</span>
-        </div>
-        <div className="v1-stat">
-          <span className="v1-stat__value">{stats.thirdPartyCount}</span>
-          <span className="v1-stat__label">第三方轉述</span>
-        </div>
-        <div className="v1-stat">
-          <span className="v1-stat__value">{stats.candidateCount}</span>
-          <span className="v1-stat__label">候選通報</span>
-        </div>
-      </div>
+      <nav className="v1-view-nav" aria-label="v1 主要導航">
+        <button
+          type="button"
+          className={view === "workbench" ? "active" : ""}
+          onClick={() => setView("workbench")}
+        >
+          整理工作台
+        </button>
+        <button
+          type="button"
+          className={view === "organizer-review" ? "active" : ""}
+          onClick={() => setView("organizer-review")}
+        >
+          候選通報複核 ({stats.candidateCount})
+        </button>
+        <button
+          type="button"
+          className={view === "actor-preview" ? "active" : ""}
+          onClick={() => setView("actor-preview")}
+        >
+          行動者預覽
+        </button>
+      </nav>
 
-      {activeView === "workbench" ? (
-        <div className="v1-workbench__layout">
-          <V1RawInfoPanel
-            records={records}
-            selectedRecordId={selectedRecord.id}
-            onSelect={(recordId) => {
-              setSelectedRecordId(recordId);
-              setShowCandidateForm(false);
-              setEditingReportId(null);
-            }}
-          />
-
-          <div className="v1-workbench__main">
-            <div className="v1-workbench__split">
-              <div className="v1-workbench__form-column">
-                <V1JudgementCard
-                  key={`judgement-${selectedRecord.id}`}
-                  judgement={selectedDraft}
-                  record={selectedRecord}
-                  onChange={updateDraft}
-                  onReset={() => resetDraft(selectedRecord.id)}
-                />
-
-                {existingReport && editingReportId === existingReport.id ? (
-                  <V1CandidateForm
-                    key={`form-edit-${existingReport.id}`}
-                    record={selectedRecord}
-                    existingReport={existingReport}
-                    onSubmit={saveCandidateReport}
-                    onCancel={() => setEditingReportId(null)}
-                  />
-                ) : showCandidateForm ? (
-                  <V1CandidateForm
-                    key={`form-${selectedRecord.id}`}
-                    record={selectedRecord}
-                    onSubmit={saveCandidateReport}
-                    onCancel={() => setShowCandidateForm(false)}
-                  />
-                ) : existingReport ? (
-                  <V1CandidateSummary
-                    report={existingReport}
-                    onEdit={() => setEditingReportId(existingReport.id)}
-                    onRevoke={() => revokeCandidateReport(existingReport.id)}
-                  />
-                ) : (
-                  <div className="v1-candidate-action">
-                    <button
-                      type="button"
-                      className="v1-button v1-button--primary"
-                      onClick={() => setShowCandidateForm(true)}
-                    >
-                      建立候選通報
-                    </button>
-                    <p className="muted">
-                      只有當你補完人事時地物等資訊，才能送出候選通報。
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <aside className="v1-workbench__raw-column">
-                <h3>原始資訊對照</h3>
-                <p>
-                  <strong>{selectedRecord.id}</strong>
-                </p>
-                <p className="v1-workbench__raw-text">
-                  {selectedRecord.rawText}
-                </p>
-                <p className="muted">
-                  <strong>資訊取得方式：</strong>
-                  {selectedRecord.sourceType}
-                </p>
-                <p className="muted">
-                  <strong>查核狀態：</strong>
-                  {selectedRecord.verificationStatus}
-                </p>
-                <p className="v1-workbench__raw-hint muted">
-                  整理時請隨時對照原文，不要補上原文沒有的內容。
-                </p>
-              </aside>
+      {view === "workbench" ? (
+        <>
+          <div className="v1-stats-bar" aria-label="v1 統計">
+            <div className="v1-stat">
+              <span className="v1-stat__value">{stats.total}</span>
+              <span className="v1-stat__label">原始資訊</span>
+            </div>
+            <div className="v1-stat">
+              <span className="v1-stat__value">{stats.cannotTaskCount}</span>
+              <span className="v1-stat__label">標為不能直接行動</span>
+            </div>
+            <div className="v1-stat">
+              <span className="v1-stat__value">{stats.thirdPartyCount}</span>
+              <span className="v1-stat__label">第三方轉述</span>
+            </div>
+            <div className="v1-stat">
+              <span className="v1-stat__value">{stats.candidateCount}</span>
+              <span className="v1-stat__label">候選通報</span>
             </div>
           </div>
-        </div>
+
+          <div className="v1-workbench__layout">
+            <V1RawInfoPanel
+              records={records}
+              selectedRecordId={selectedRecord.id}
+              onSelect={(recordId) => {
+                setSelectedRecordId(recordId);
+                setShowCandidateForm(false);
+                setEditingReportId(null);
+              }}
+            />
+
+            <div className="v1-workbench__main">
+              <V1JudgementCard
+                key={`judgement-${selectedRecord.id}`}
+                judgement={selectedDraft}
+                record={selectedRecord}
+                onChange={updateDraft}
+                onReset={() => resetDraft(selectedRecord.id)}
+              />
+
+              {existingReport && editingReportId === existingReport.id ? (
+                <V1CandidateForm
+                  key={`form-edit-${existingReport.id}`}
+                  record={selectedRecord}
+                  existingReport={existingReport}
+                  onSubmit={saveCandidateReport}
+                  onCancel={() => setEditingReportId(null)}
+                />
+              ) : showCandidateForm ? (
+                <V1CandidateForm
+                  key={`form-${selectedRecord.id}`}
+                  record={selectedRecord}
+                  onSubmit={saveCandidateReport}
+                  onCancel={() => setShowCandidateForm(false)}
+                />
+              ) : existingReport ? (
+                <V1CandidateSummary
+                  report={existingReport}
+                  onEdit={() => setEditingReportId(existingReport.id)}
+                  onRevoke={() => revokeCandidateReport(existingReport.id)}
+                  onReview={() => markCandidateReviewed(existingReport.id)}
+                />
+              ) : (
+                <div className="v1-candidate-action">
+                  <button
+                    type="button"
+                    className="v1-button v1-button--primary"
+                    onClick={() => setShowCandidateForm(true)}
+                  >
+                    建立候選通報
+                  </button>
+                  <p className="muted">
+                    只有當你補完人事時地物等資訊，才能送出候選通報。
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      ) : view === "organizer-review" ? (
+        <V1CandidateGallery
+          records={records}
+          reports={candidateReports}
+          onRevoke={revokeCandidateReport}
+          onReview={markCandidateReviewed}
+        />
       ) : (
         <V1CandidateGallery
           records={records}
           reports={candidateReports}
           onRevoke={revokeCandidateReport}
+          readOnly
         />
       )}
     </div>
@@ -246,10 +252,12 @@ function V1CandidateSummary({
   report,
   onEdit,
   onRevoke,
+  onReview,
 }: {
   report: V1CandidateReport;
   onEdit: () => void;
   onRevoke: () => void;
+  onReview: () => void;
 }) {
   return (
     <article
@@ -259,9 +267,10 @@ function V1CandidateSummary({
     >
       <div className="v1-candidate-summary__header">
         <div>
-          <p className="eyebrow">已建立的候選通報</p>
           <h3>{report.id}</h3>
+          <p className="muted">來自 {report.messyRecordId}</p>
         </div>
+        <V1StatusBadge status={report.status} reviewed={!!report.reviewedAt} />
       </div>
       <p className="muted">
         這份通報仍來自未確認資料，不是正式任務，也不是真正的派出指令。
@@ -293,6 +302,15 @@ function V1CandidateSummary({
         </div>
       </dl>
       <div className="v1-candidate-summary__actions">
+        <button
+          type="button"
+          className={
+            report.reviewedAt ? "v1-button" : "v1-button v1-button--primary"
+          }
+          onClick={onReview}
+        >
+          {report.reviewedAt ? "重新複核" : "標記為已人工複核"}
+        </button>
         <button type="button" className="v1-button" onClick={onEdit}>
           編輯通報
         </button>
