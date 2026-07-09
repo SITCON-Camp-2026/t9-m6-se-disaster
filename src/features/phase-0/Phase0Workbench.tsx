@@ -3,6 +3,7 @@ import { RecordCard } from "../../components/RecordCard";
 import { StatusBadge } from "../../components/StatusBadge";
 import { Phase0CandidateForm } from "./Phase0CandidateForm";
 import { Phase0JudgementCard } from "./Phase0JudgementCard";
+import { Phase0StatsSummary } from "./Phase0StatsSummary";
 import { createPhase0Judgement } from "./phase0-heuristics";
 import { detectPhase0Signals } from "./phase0-signals";
 import { formatDateTime } from "../../lib/date";
@@ -110,6 +111,11 @@ export function Phase0Workbench({
           左側選擇一筆原始資訊，右側卡片會顯示保守的安全預設草稿。點「編輯草稿」可以標出候選類型、卡住點、行動限制與人工備註。
         </p>
       </div>
+
+      <Phase0StatsSummary
+        records={records}
+        candidateReports={candidateReports}
+      />
 
       <div className="workbench__layout">
         <aside className="workbench__queue" aria-label="選擇原始資訊">
